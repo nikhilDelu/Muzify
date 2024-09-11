@@ -22,9 +22,14 @@ async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
+    cached.promise = mongoose
+      .connect(
+        "mongodb+srv://projectyjka:53yjka21@asciicluster0.pgohfwc.mongodb.net/ASCIIdb",
+        opts
+      )
+      .then((mongoose) => {
+        return mongoose;
+      });
   }
 
   cached.conn = await cached.promise;

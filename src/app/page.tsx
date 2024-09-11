@@ -1,113 +1,259 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useRef, useState } from "react";
+import {
+  Plus,
+  User,
+  PlayIcon,
+  PauseIcon,
+  Pause,
+  SkipForward,
+  Divide,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import Image from "next/image";
+import Navbar from "@/components/Navbar";
+import axios from "axios";
+import { signIn, useSession } from "next-auth/react";
+import Youtube, { YouTubeProps } from "react-youtube";
+import YouTube from "react-youtube";
+import { Play } from "next/font/google";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface Song {
+  id: number;
+  title: string;
+  artist: string;
+  votes: number;
+  url: string;
+  addedBy: string;
+  smallImg: string;
+  bigImg: string;
+}
+interface Response {
+  streams: Song[];
+}
+
+declare global {
+  interface Window {
+    YT: {
+      Player: new (element: HTMLElement, options: any) => any;
+    };
+  }
+}
+
+export default function Page() {
+  const [current, setCurrent] = useState<Song | null>();
+  const [newSongUrl, setNewSongUrl] = useState("");
+  const [queue, setQueue] = useState<Song[]>([]);
+  const iframeRef = useRef<YouTube | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const getList = async () => {
+    try {
+      const response = await axios.get<Response>(
+        `http://localhost:3000/api/stream`
+      );
+      setQueue(response.data.streams);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  };
+
+  const addSong = async (url: string) => {
+    const isSongInQueue = queue.some((queuedSong) => queuedSong.url === url);
+    if (isSongInQueue) {
+      setNewSongUrl("");
+      return;
+    }
+    try {
+      setAdding(true);
+      await axios.post(`http://localhost:3000/api/stream`, {
+        url,
+      });
+      setNewSongUrl("");
+      getList();
+    } catch (error) {
+      console.error("Failed to add song:", error);
+    }
+    setAdding(false);
+  };
+
+  useEffect(() => {
+    try {
+      getList();
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
+  const playPause = (song: Song) => {
+    setCurrent(song);
+    if (isPlaying) {
+      iframeRef?.current?.internalPlayer?.pauseVideo();
+      setIsPlaying(false);
+    } else {
+      iframeRef?.current?.internalPlayer?.playVideo();
+      setIsPlaying(true);
+    }
+    return { message: "success" };
+  };
+  const opts: YouTubeProps["opts"] = {
+    height: "100%",
+    width: "100%",
+    playerVars: {
+      autoplay: 1,
+    },
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="h-screen flex flex-col relative bg-black text-white gap-4 font-sans p-4 pt-0 md:pt-0 md:p-8">
+      <Navbar />
+
+      <div className="relative h-full overflow-hidden flex flex-col md:flex-row gap-8">
+        <div className="w-full md:w-1/3">
+          <div className="bg-white/10 rounded-3xl flex flex-col items-start overflow-hidden">
+            <div className="relative w-full h-0 pb-[56.25%] overflow-hidden flex items-center justify-center">
+              {current ? (
+                <Youtube
+                  id="player"
+                  className="absolute top-0 left-0 w-full h-full"
+                  ref={iframeRef}
+                  videoId={getYouTubeVideoId(current?.url ?? "")}
+                  opts={opts}
+                  onEnded={() => setCurrent(null)}
+                />
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  x="0px"
+                  y="0px"
+                  width="480"
+                  height="480"
+                  viewBox="0 0 48 48"
+                  className="absolute top-0 left-0 w-full h-full"
+                >
+                  <path
+                    fill="#FF3D00"
+                    d="M43.2,33.9c-0.4,2.1-2.1,3.7-4.2,4c-3.3,0.5-8.8,1.1-15,1.1c-6.1,0-11.6-0.6-15-1.1c-2.1-0.3-3.8-1.9-4.2-4C4.4,31.6,4,28.2,4,24c0-4.2,0.4-7.6,0.8-9.9c0.4-2.1,2.1-3.7,4.2-4C12.3,9.6,17.8,9,24,9c6.2,0,11.6,0.6,15,1.1c2.1,0.3,3.8,1.9,4.2,4c0.4,2.3,0.9,5.7,0.9,9.9C44,28.2,43.6,31.6,43.2,33.9z"
+                  ></path>
+                  <path fill="#FFF" d="M20 31L20 17 32 24z"></path>
+                </svg>
+              )}
+            </div>
+
+            <div className="h-full w-full flex items-center justify-between pl-6 p-2">
+              <div className="w-full h-12 overflow-hidden flex-col justify-center items-center -gap-2 font-mono leading-tight pt-3">
+                <h3 className="font-semibold text-[12px]">
+                  {current?.title || "No song playing"}
+                </h3>
+                <p className="text-gray-400 text-[8px]">
+                  {current?.artist || "Add songs to the queue"}
+                </p>
+              </div>
+
+              <div className="flex h-full w-full items-center justify-end px-4">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="rounded-full w-8 h-8 bg-white/10 hover:bg-white/20 transition-colors"
+                  onClick={() => {
+                    current && playPause(current);
+                  }}
+                >
+                  {isPlaying ? (
+                    <Pause className="h-6 w-6" />
+                  ) : (
+                    <PlayIcon className="h-6 w-6" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full md:w-2/3  h-full flex flex-col gap-4 relative">
+          <div className="bg-white/10 rounded-3xl p-6">
+            <div className="flex">
+              <Input
+                type="text"
+                placeholder="Add song URL"
+                value={newSongUrl}
+                onChange={(e) => setNewSongUrl(e.target.value)}
+                className="flex-1 bg-white/5 border-0 rounded-l-full focus:ring-0 text-white placeholder-gray-400"
+              />
+              <Button
+                disabled={adding}
+                onClick={() => addSong(newSongUrl)}
+                className="rounded-r-full bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {adding ? "Adding..." : "Add"}
+              </Button>
+            </div>
+          </div>
+
+          <ScrollArea className="h-72  overflow-y-auto w-full rounded-xl">
+            <div className="space-y-4">
+              {/* {JSON.stringify(queue)} */}
+              {queue &&
+                queue.map((song, index) => (
+                  <div
+                    key={song.id}
+                    className="flex items-center space-x-4 p-4 bg-white/5 rounded-2xl"
+                  >
+                    <Image
+                      src={song.smallImg ?? ""}
+                      width={50}
+                      height={50}
+                      objectFit="cover"
+                      alt="Thumbnail"
+                      className="aspect-square h-full rounded-xl"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{song.title}</h4>
+                      <p className="text-sm text-gray-400">{song.artist}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {/* <Avatar className="w-6 h-6">
+                            <AvatarImage src={session?.user.image ?? ""} />
+                            <AvatarFallback>
+                              <User className="h-4 w-4" />
+                            </AvatarFallback>
+                          </Avatar> */}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="group text-gray-400 transition-colors"
+                        onClick={async () => {
+                          playPause(song);
+                        }}
+                      >
+                        {song.addedBy}
+                        {current?.url === song.url && isPlaying ? (
+                          <PauseIcon className="size-4 mr-1" />
+                        ) : (
+                          <PlayIcon className="h-4 w-4 mr-1" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
+}
+
+function getYouTubeVideoId(url: string) {
+  const regex =
+    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
 }

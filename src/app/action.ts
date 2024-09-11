@@ -19,11 +19,11 @@ const get = async () => {
   try {
     ("use server");
     // Ensure this format
-    const response = await axios.get("http://localhost:3000/api/stream");
+    const response = await axios.get(`${process.env.TOAPI}/api/stream`);
     // Ensure this format
 
     console.log(response.data);
-    return response;
+    return response.data;
   } catch (error) {
     console.error("Failed to fetch data:", error);
   }

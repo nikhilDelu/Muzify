@@ -11,12 +11,6 @@ const CreateSchemeSchema = z.object({
   url: z.string(),
 });
 
-export function setCORSHeaders(res: NextResponse) {
-  res.headers.set("Access-Control-Allow-Origin", "*");
-  res.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.headers.set("Access-Control-Allow-Headers", "Content-Type");
-}
-
 async function getVideoDetails(videoId: string) {
   try {
     const info = await ytdl.getInfo(videoId);
@@ -28,8 +22,6 @@ async function getVideoDetails(videoId: string) {
 
 export async function POST(req: NextRequest) {
   await dbConnect(); // Connect to MongoDB
-  const res = new NextResponse();
-  setCORSHeaders(res);
 
   try {
     const data = CreateSchemeSchema.parse(await req.json());

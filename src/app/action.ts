@@ -18,10 +18,12 @@ interface Response {
 const get = async () => {
   try {
     ("use server");
-    const response = await axios.get<Response>(
-      `${process.env.TOAPI}/api/stream`
-    );
-    return response.data;
+    // Ensure this format
+    const response = await axios.get("http://localhost:3000/api/stream");
+    // Ensure this format
+
+    console.log(response.data);
+    return response;
   } catch (error) {
     console.error("Failed to fetch data:", error);
   }

@@ -15,7 +15,7 @@ interface Response {
   streams: Song[];
 }
 
-export const get = async () => {
+const get = async () => {
   try {
     ("use server");
     const response = await axios.get<Response>(
@@ -27,7 +27,7 @@ export const get = async () => {
   }
 };
 
-export const add = async (url: string) => {
+const add = async (url: string) => {
   try {
     ("use server");
     await axios.post(`${process.env.TOAPI}/api/stream`, {
@@ -39,3 +39,5 @@ export const add = async (url: string) => {
     console.error("Failed to add song:", error);
   }
 };
+
+export { add, get };

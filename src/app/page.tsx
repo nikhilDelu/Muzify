@@ -12,16 +12,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import axios from "axios";
-import { signIn, useSession } from "next-auth/react";
 import Youtube, { YouTubeProps } from "react-youtube";
 import YouTube from "react-youtube";
-import { Play } from "next/font/google";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { add, get } from "../app/action";
 
 interface Song {
   id: number;
@@ -55,10 +52,10 @@ export default function Page() {
 
   const getList = async () => {
     try {
-      const response = await axios.get<Response>(
-        `http://localhost:3000/api/stream`
-      );
-      setQueue(response.data.streams);
+      const response: Response | undefined = await get();
+      if (response) {
+        setQueue(response?.streams!);
+      }
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
@@ -72,9 +69,7 @@ export default function Page() {
     }
     try {
       setAdding(true);
-      await axios.post(`http://localhost:3000/api/stream`, {
-        url,
-      });
+      await add(url);
       setNewSongUrl("");
       getList();
     } catch (error) {

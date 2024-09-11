@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import axios from "axios";
 import Youtube, { YouTubeProps } from "react-youtube";
 import YouTube from "react-youtube";
 import { add, get } from "../app/action";

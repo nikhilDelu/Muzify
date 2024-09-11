@@ -56,7 +56,7 @@ export default function Page() {
   const getList = async () => {
     try {
       const response = await axios.get<Response>(
-        `http://localhost:3000/api/stream`
+        `${process.env.toApi}/stream`
       );
       setQueue(response.data.streams);
     } catch (error) {
@@ -72,7 +72,7 @@ export default function Page() {
     }
     try {
       setAdding(true);
-      await axios.post(`http://localhost:3000/api/stream`, {
+      await axios.post(`${process.env.toApi}/stream`, {
         url,
       });
       setNewSongUrl("");

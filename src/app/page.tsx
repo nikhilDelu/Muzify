@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Plus,
-  User,
-  PlayIcon,
-  PauseIcon,
-  Pause,
-  SkipForward,
-  Divide,
-} from "lucide-react";
+import { Plus, PlayIcon, PauseIcon, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";

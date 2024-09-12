@@ -19,7 +19,7 @@ const get = async () => {
   try {
     ("use server");
     // Ensure this format
-    const response = await axios.get(`https://cloudserver-2.onrender.com/api/stream`);
+    const response = await axios.get(`https://cloudserver-4.onrender.com/api/stream`);
     // Ensure this format
 
     console.log(response.data);
@@ -32,7 +32,7 @@ const get = async () => {
 const add = async (url: string) => {
   try {
     ("use server");
-    await axios.post(`https://cloudserver-2.onrender.com/api/stream`, {
+    await axios.post(`https://cloudserver-4.onrender.com/api/stream`, {
       url,
     });
 

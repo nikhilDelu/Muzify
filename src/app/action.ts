@@ -1,5 +1,6 @@
 "use server";
 import axios from "axios";
+// @ts-ignore
 import youtubesearchapi from "youtube-search-api";
 
 interface Song {
